@@ -1,4 +1,6 @@
-# 00 — Compiler & toolchain fundamentals
+# Compiler & toolchain fundamentals
+
+Tags: #toolchain #compilers #linking
 
 Before touching processes, threads, or syscalls, it's worth seeing exactly what happens between writing `hello.c` and running `./hello` — otherwise every later lab's `Makefile` is just a black box that happens to work.
 
@@ -101,7 +103,7 @@ The `main:` label is where execution starts. Reading it:
 - `movl $0, %eax` — the return value (`eax`) is set to 0 — this is `return 0;`.
 - `popq %rbp` / `ret` — epilogue: restore the caller's frame pointer, return.
 
-The instructions themselves, as a reference table (general categories are in `notes/01-cpu-architecture/notes.md`; this is specifically the ones that appear in `hello.s`):
+The instructions themselves, as a reference table (general categories are in the [CPU architecture](../cpu-architecture/notes.md) module; this is specifically the ones that appear in `hello.s`):
 
 | Instruction | Meaning |
 |---|---|
@@ -132,4 +134,4 @@ Common directives, decoded:
 
 ## Try it yourself
 
-Do the lab before moving on — running the four stages by hand, then building a small multi-file project by hand without `make`, then writing your own `Makefile` for it. After that, go back and re-read the `Makefile`s in `labs/02-processes/*` — they should read as plain and boring now.
+Do the lab before moving on — running the four stages by hand, then building a small multi-file project by hand without `make`, then writing your own `Makefile` for it. After that, go back and re-read the `Makefile`s in `labs/processes/*` — they should read as plain and boring now.

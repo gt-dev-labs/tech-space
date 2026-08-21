@@ -1,43 +1,22 @@
-# Learning Systems
+# Learning Tech
 
-A personal curriculum for learning systems programming, OS internals, and networking. Notes (конспект) plus hands-on labs in C, working toward understanding how nginx and Node.js work under the hood, and how Docker, Kubernetes, and OS networking fit together.
+A personal, multi-domain technical learning repo: notes (конспект) plus hands-on labs, organized as a **flat, shared pool of modules** — each one a permanent, numberless slug in `notes/<slug>/` and `labs/<slug>/` — with **tracks** as curated reading plans on top, each just a `tracks/<name>.md` file that links to modules from the shared pool in whatever order that domain needs. A module doesn't belong to one track; any number of tracks can reference the same module as a step in their own plan.
 
-If you're an AI agent working in this repo, read [`AGENTS.md`](AGENTS.md) first — it covers communication conventions, curriculum depth expectations, and repo structure.
+If you're an AI agent working in this repo, read [`AGENTS.md`](AGENTS.md) first — it covers communication conventions, depth expectations, and how modules/tracks/tags fit together.
 
-## Structure
+## Tracks
 
-- `notes/` — one folder per module:
-  - `notes.md` — the structured concept write-up (конспект)
-  - `qa.md` — where a module involved a real back-and-forth (not just reading the note), a record of what came out of that conversation: the actual questions asked, the wrong turns and corrections along the way, and the commands/output that settled things. Not every module has one — only add it when a genuine discussion happened.
-- `labs/` — hands-on C (or assembly) exercises, one directory per module; each lab has an `instructions.md`, one or more source skeletons with `TODO` markers, and a `Makefile`
+| Track | Covers |
+|---|---|
+| [`operating-systems`](tracks/operating-systems.md) | OS internals and networking — how Linux actually works, from userspace up |
+| [`systems-programming`](tracks/systems-programming.md) | General programming-craft/build-tooling topics not tied to a specific OS or runtime — currently the C toolchain |
+| [`nodejs`](tracks/nodejs.md) | Node.js/libuv event loop internals, with nginx's event-loop model as a comparison example |
+| [`docker-kubernetes`](tracks/docker-kubernetes.md) | Container and orchestration architecture — how Docker and Kubernetes actually work |
 
-## Roadmap
+More tracks get added here as they start — each one is just a new `tracks/<name>.md` file and a row in this table.
 
-- [x] 00 — Toolchain: compiling and running C by hand
-- [ ] 01 — CPU architecture primer
-- [x] 02 — Processes
-- [ ] 03 — Virtual memory & paging
-- [ ] 04 — System calls
-- [ ] 05 — Threads
-- [ ] 06 — IPC
-- [ ] 07 — I/O multiplexing (select/poll/epoll)
-- [ ] 08 — Networking & sockets
-- [ ] 09 — Case studies: nginx & Node.js/libuv event loops
-- [ ] 10 — Namespaces & cgroups
-- [ ] 11 — Docker & Kubernetes architecture
-- [ ] 12 — OS networking deep dive
+## Why a flat pool + track plans, instead of tracks owning their own content
 
-Modules 01 and 03 were inserted after starting 00/02, prompted by questions that came up while reading `hello.s` — CPU architecture (registers, calling conventions) directly supports reading assembly, and virtual memory/paging deepens the process address-space material and explains fork's copy-on-write for real.
+This repo has changed shape twice already. First it was one flat sequence; that broke once topics stopped being genuinely sequential. Then each domain got its own track folder, owning its own numbered `notes/`/`labs/` — but that just moved the problem: a module that's genuinely cross-cutting (sockets are both "OS" and "networking") still had to pick exactly one owning track, and that ownership decision kept changing, which meant renumbering the whole track every time.
 
-## How to work through a module
-
-Read `notes/<module>/notes.md` first for the concept, then work through that module's labs in order — each lab applies what the note just covered, and later labs build on earlier ones. Check `notes/<module>/qa.md` too, if it exists — it captures follow-up questions and corrections that the plain note doesn't.
-
-**Why C instead of Rust for the fundamentals:** nginx and Node's runtime layer (V8/libuv) are C/C++, and the goal is to learn the raw OS interface (syscalls, memory layout, POSIX) directly rather than through an abstraction on top of it. Rust is worth returning to afterward as a second systems language — it lands better once you've felt the problems it solves firsthand.
-
-## Working on a lab
-
-Each lab directory has:
-- `instructions.md` — what to implement and what behavior to expect
-- one or more `.c` files with a skeleton and `TODO` markers
-- a `Makefile` — `make` to build, `make run` to build and run, `make clean` to remove build artifacts
+Splitting "what a module is" from "what order a track presents it in" fixes that at the root. A module gets a permanent slug once and never moves or renumbers again, no matter how many tracks reference it or in what order each one wants it. All the actual sequencing — "step 1, step 2, ..." — lives in a track's own `.md` file as an ordered list of links, which is cheap to edit and never forces a file move. Tags (`#networking #os`, right under a module's title) handle discovery across the whole pool independent of any one track's plan.

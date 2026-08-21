@@ -1,6 +1,8 @@
-# 01 — CPU architecture primer
+# CPU architecture primer
 
-This is a primer, not a full computer-architecture course — just enough to read assembly (like `hello.s` from module 00) with real understanding, and to make later topics (context switches, syscalls, crashes) make sense at the hardware level instead of feeling like magic.
+Tags: #cpu #architecture #assembly #interrupts
+
+This is a primer, not a full computer-architecture course — just enough to read assembly (like `hello.s` from the [toolchain](../toolchain/notes.md) module) with real understanding, and to make later topics (context switches, syscalls, crashes) make sense at the hardware level instead of feeling like magic.
 
 We're on **x86-64** (confirm with `uname -m`) — the instruction set architecture (ISA) most desktop/server Linux boxes run. ARM is the other major one you'll run into (phones, Apple Silicon, and increasingly cloud/k8s nodes) — same general concepts, different actual instructions and calling convention.
 
@@ -18,7 +20,7 @@ There's also a **flags register** (`rflags`) holding condition codes (zero, carr
 
 ## The stack, mechanically
 
-You already know the stack as "a memory segment that grows down" from module 02. Here's the actual mechanism:
+You already know the stack as "a memory segment that grows down" from the [Processes](../processes/notes.md) module. Here's the actual mechanism:
 
 - `rsp` always points at the current top (lowest address in use) of the stack.
 - `push` decrements `rsp` by the operand's size, then writes the value there.
@@ -69,7 +71,7 @@ You can skip all of that and write `_start` yourself, with zero libc involved. D
 An **interrupt** is an event that makes the CPU stop the instruction stream it's currently running and jump to a fixed handler, then usually resume afterward. Two flavors:
 
 - **Hardware interrupts (asynchronous)** — raised by a device (timer, network card, disk, keyboard) at a moment that has nothing to do with what the CPU happens to be executing. A timer interrupt in particular fires on a fixed schedule no matter what code is running.
-- **Software traps / exceptions (synchronous)** — raised by the instruction the CPU is executing right now: either deliberately (the `syscall` instruction from the previous section, or the older `int 0x80`), or because the CPU hit a condition it can't proceed past (divide-by-zero, invalid opcode, or a **page fault** — which module 03 already covered without using this word: a page fault genuinely is a CPU exception, and the kernel's fault handler is genuinely an exception handler).
+- **Software traps / exceptions (synchronous)** — raised by the instruction the CPU is executing right now: either deliberately (the `syscall` instruction from the previous section, or the older `int 0x80`), or because the CPU hit a condition it can't proceed past (divide-by-zero, invalid opcode, or a **page fault** — which the [virtual memory](../virtual-memory/notes.md) module already covered without using this word: a page fault genuinely is a CPU exception, and the kernel's fault handler is genuinely an exception handler).
 
 The CPU finds the right handler via the **IDT** (Interrupt Descriptor Table) — a table the kernel sets up at boot, indexed by a vector number (0–255), each slot pointing to a specific handler address. Any interrupt/trap/exception looks up its vector, jumps to that handler, and (for most cases) returns to exactly where it left off once the handler is done.
 
@@ -79,11 +81,11 @@ This reframes `syscall` from the previous section precisely: it's a deliberate, 
 
 **Why this matters beyond terminology:**
 
-- **Preemptive multitasking is built on the timer interrupt.** A process never has to cooperate for the kernel to regain control — the periodic timer interrupt traps into the kernel regardless of what the process is doing, and *that's* the actual mechanism behind a Running→Ready transition (module 02) and a context switch (module 01, registers section): interrupt fires → kernel's scheduler runs → it saves the current process's registers and loads a different process's → returns from the interrupt into different code than where it was raised. Without this, a process stuck in an infinite loop with no syscalls could hang a whole CPU core forever.
+- **Preemptive multitasking is built on the timer interrupt.** A process never has to cooperate for the kernel to regain control — the periodic timer interrupt traps into the kernel regardless of what the process is doing, and *that's* the actual mechanism behind a Running→Ready transition (the [Processes](../processes/notes.md) module) and a context switch (this module's registers section, above): interrupt fires → kernel's scheduler runs → it saves the current process's registers and loads a different process's → returns from the interrupt into different code than where it was raised. Without this, a process stuck in an infinite loop with no syscalls could hang a whole CPU core forever.
 - **I/O completion is signaled by hardware interrupts too.** A network card raises an interrupt when a packet arrives; the kernel's handler does minimal work (mark the data ready, wake up whoever's waiting on that file descriptor) and returns fast; the waiting process's blocked `read()`/`epoll_wait()` call actually resumes later. This is the real mechanism behind why `epoll_wait()` can sleep efficiently and still wake up exactly when data shows up — worth remembering once we get to I/O multiplexing and nginx/Node's event loops.
 
 ## Why this matters going forward
 
 - **Debugging** — `gdb` shows you exactly this: register values, one instruction at a time. The lab below does this on `hello`.
 - **Crashes** — a segfault's crash address and stack trace are just `rip` and a walk up the stack using `rbp` chains — no longer opaque once you've seen this mechanism directly.
-- **Context switches** (module 05, threads) — a context switch is fundamentally "save this thread's registers somewhere, load a different thread's registers" — now you know concretely what's being saved and restored.
+- **Context switches** (a future Threads module, not yet built) — a context switch is fundamentally "save this thread's registers somewhere, load a different thread's registers" — now you know concretely what's being saved and restored.

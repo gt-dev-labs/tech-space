@@ -13,7 +13,7 @@ sudo apt install -y gdb
 3. Inside gdb:
    - `break main` — set a breakpoint at the start of `main`
    - `run` — starts the program, stops at the breakpoint
-   - `disas main` — disassemble `main`. Compare it against `labs/00-toolchain/hello.s` — same logic, possibly a different syntax (gdb may default to AT&T or Intel depending on your setup; `set disassembly-flavor att` forces AT&T to match what you already know)
+   - `disas main` — disassemble `main`. Compare it against `labs/toolchain/hello.s` — same logic, possibly a different syntax (gdb may default to AT&T or Intel depending on your setup; `set disassembly-flavor att` forces AT&T to match what you already know)
    - `stepi` (or `si`) — execute exactly one machine instruction and stop. Do this repeatedly, and after each one run `info registers rip rsp rbp rax rdi` — watch `rip` advance, and watch `rdi` stay zero/garbage until the `lea`+`mov` pair actually loads the string's address into it
    - Right after `rdi` gets set (just before the `call puts@plt` line), run `x/s $rdi` — this reads memory at the address `rdi` points to, as a string. You should see `"Hello, systems!"` — the literal bytes from `.rodata`, exactly like the `objdump`/hex dump we did earlier, but now read directly out of your program's live memory
    - `continue` — let it run to completion; you'll see the program's real output (`Hello, systems!`) print, interleaved with gdb

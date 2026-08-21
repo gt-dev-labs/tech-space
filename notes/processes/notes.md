@@ -1,4 +1,6 @@
-# 01 — Processes
+# Processes
+
+Tags: #os #processes
 
 ## What is a process?
 
@@ -39,7 +41,7 @@ low addr   |       text       |  <- compiled code (read-only)
 - **data** — global/static variables with an explicit initial value, writable
 - **bss** — global/static variables with no explicit initializer (zero-filled at load, not stored in the binary)
 - **heap** — dynamic memory (`malloc`/`free`), grows toward higher addresses
-- **stack** — function call frames and locals, grows toward lower addresses; each thread gets its own stack (module 05)
+- **stack** — function call frames and locals, grows toward lower addresses; each thread gets its own stack (a future Threads module, not yet built)
 
 This is *virtual* memory — every process sees its own private view of this layout; the MMU and page tables map it to physical RAM (or swap). Two processes' `0x400000` are different physical bytes.
 
@@ -100,7 +102,7 @@ The exit status is what the parent sees via `wait()`/`waitpid()` (as `WEXITSTATU
 ## Why this matters later
 
 - nginx's master process `fork()`s its worker processes at startup — no `exec()`, since workers run the same binary, just entering a different code path
-- containers don't introduce a new *kind* of process — a "containerized process" is a normal Linux process; module 10 covers what's layered on top of fork/exec (namespaces, cgroups) to make it feel isolated
+- containers don't introduce a new *kind* of process — a "containerized process" is a normal Linux process; a future Namespaces & cgroups module (see also the `docker-kubernetes` track) covers what's layered on top of fork/exec to make it feel isolated
 - zombie/orphan handling matters for anything that supervises subprocesses: nginx's master, the Docker daemon, `init` systems
 
 ## Try it yourself

@@ -1,6 +1,6 @@
 # Working in this repo
 
-This is a personal systems-programming curriculum: notes (конспект) + hands-on labs in C (and some hand-written x86-64 assembly), building toward understanding how nginx and Node.js work under the hood, and how Docker, Kubernetes, and OS networking fit together. If you're an agent working in this repo — any agent, not a specific one — here's how to do it well.
+This is a personal, multi-domain technical learning curriculum: notes (конспект) plus hands-on labs. If you're an agent working in this repo — any agent, not a specific one — here's how to do it well.
 
 ## Communication
 
@@ -9,28 +9,35 @@ Before answering, restate the user's message in natural, conversational American
 ## Depth
 
 - Default to real depth, not shallow "primer" coverage. When a question surfaces a topic deeper than what was planned, treat it as a real candidate for expanding the curriculum (a new module: notes + lab) rather than a quick aside.
-- Prefer hands-on verification over assertions — actually run the commands (`gcc`, `readelf`, `objdump`, `nm`, `gdb`, `strace`, `/proc` inspection, etc.) and show real output, rather than describing what "should" happen.
-- Sequencing/placement of new material in the roadmap is worth asking about; the depth of the content itself is not something to undersell once it's scoped.
+- Prefer hands-on verification over assertions — actually run the relevant commands/tools and show real output, rather than describing what "should" happen.
+- Sequencing/placement of new material in a track's plan is worth asking about; the depth of the content itself is not something to undersell once it's scoped.
 
-## Language & curriculum choices
+## The model: a flat module pool, plus track plans on top
 
-- Labs are written in C (plus some hand-written assembly), not Rust. Rationale: nginx and Node's runtime layer (V8/libuv) are C/C++, and the explicit goal is learning the raw OS interface (syscalls, memory layout, POSIX, ELF) directly, rather than through Rust's abstraction on top of it. Revisiting Rust later, after the fundamentals, is a reasonable plan, not something ruled out.
-- `README.md`'s roadmap is the current source of truth for module order and numbering. It has already been renumbered once as modules got inserted mid-curriculum (CPU architecture and virtual memory were added after toolchain/processes were already underway) and will likely keep shifting — check it before trusting any other document's module list.
+- **Modules live flat, at `notes/<slug>/` and `labs/<slug>/`**, one per topic, with a permanent, descriptive, numberless slug (`processes`, `virtual-memory`, `cpu-architecture`, ...). A module's slug is chosen once and never changes — it doesn't encode a position in any sequence, so it never needs renumbering when scope shifts or a new track wants to reference it differently.
+- **Tracks are curated plans, not owners.** Each track is a single file, `tracks/<name>.md` — an ordered, numbered list of links into the shared module pool, plus any track-specific framing (why this order, what's not built yet, "builds on" notes). A track file owns no `notes/`/`labs/` content of its own.
+- **The same module can appear in more than one track's plan.** A module that's genuinely cross-cutting (e.g. sockets are both "OS" and "networking") doesn't need to pick one true owner — it just gets referenced, in whatever order makes sense, by every track's plan that needs it.
+- **Cross-references between modules** (a note leaning on a concept from another module) should be a real relative link — `[Processes](../processes/notes.md)` — not a "module N" number, since numbers don't exist in this model.
+- The root `README.md` is the index of tracks; `tracks/<name>.md` is a track's own roadmap.
 
-## Repo structure & conventions
+## Tags, for cross-cutting discovery
 
-- `notes/<NN-module-name>/notes.md` — the structured concept write-up.
-- `notes/<NN-module-name>/qa.md` — only for a module that involved a genuine back-and-forth (not just reading the note): the actual questions asked, wrong turns/corrections made along the way, and the real commands/output that settled things. Don't create one preemptively — add it once a real discussion actually happens.
-- `labs/<NN-module-name>/` — one directory per module:
+A module can belong to more than one topic area at once without that needing to be resolved into one category. Add a line right after a `notes.md`'s H1 title: `Tags: #networking #os` — plain inline hashtags, not YAML frontmatter, specifically so the editor's own text search (VSCode's `Ctrl/Cmd+Shift+F`, or `grep`/`rg #networking`) finds every tagged file with zero tooling, and so the tags still work natively if the notes ever get opened in a tag-aware app (Obsidian, etc.). Tag `notes.md` only, not `qa.md` — a module's `qa.md` inherits the same tags as its `notes.md`.
+
+## Conventions within a module
+
+- `notes/<slug>/notes.md` — the structured concept write-up.
+- `notes/<slug>/qa.md` — only for a module that involved a genuine back-and-forth (not just reading the note): the actual questions asked, wrong turns/corrections made along the way, and the real commands/output that settled things. Don't create one preemptively — add it once a real discussion actually happens.
+- `labs/<slug>/` — one directory per module:
   - `instructions.md` — what to implement/do, and how to verify it
-  - one or more source files (`.c` or `.s`) as **skeletons with `TODO` markers** — don't hand over a finished solution; filling the gaps is the point of a lab
-  - a `Makefile`
-  - Exception: a lab about *using a tool* (e.g. `gdb`, `strace`) rather than *writing code* can be fully working/ready-to-run, since the exercise is driving the tool, not filling in gaps.
-- Read the note first, then work the labs in order — later labs in a module build on earlier ones.
-- Toolchain on this machine: `gcc`, `make`, `gdb`, and `strace` are all installed. They weren't present when the repo started (had to be installed mid-curriculum) — if a fresh environment is missing one, that's expected, not a repo problem.
+  - one or more source files as **skeletons with `TODO` markers** — don't hand over a finished solution; filling the gaps is the point of a lab
+  - a `Makefile` or equivalent build/run instructions
+  - Exception: a lab about *using a tool* (a debugger, a tracer, a profiler, ...) rather than *writing code* can be fully working/ready-to-run, since the exercise is driving the tool, not filling in gaps.
+- Read a module's note first, then work its labs in order — later labs in a module build on earlier ones.
+- Language/tooling choices are documented in whichever track plan(s) reference a module — check there rather than assuming.
 
 ## Verifying before claiming something works
 
-- Compile-check every skeleton/example before describing it as working — `gcc -Wall -Wextra` at minimum. Unused-variable/parameter warnings on unfilled `TODO`s are expected and fine; real errors are not.
-- Clean up build artifacts (`make clean` / `rm`) after verifying.
-- Run `git status` before any broad change, and before anything that could discard uncommitted work — nothing in this repo is committed yet as of this writing, but don't assume that stays true.
+- Compile/run-check every skeleton/example before describing it as working. Warnings on unfilled `TODO`s (unused variables, etc.) are expected and fine; real errors are not.
+- Clean up build artifacts after verifying.
+- Run `git status` before any broad change, and before anything that could discard uncommitted work.

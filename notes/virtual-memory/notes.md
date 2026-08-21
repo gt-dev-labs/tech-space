@@ -1,13 +1,15 @@
-# 03 — Virtual memory & paging
+# Virtual memory & paging
 
-Module 02 asserted a few things without explaining the mechanism: that two processes' `0x400000` are different physical bytes, that `fork()`'s copy-on-write "just works," and that `.text` can be "shared between processes running the same binary." This module explains *how*, and it all comes down to one idea: **every memory address your program ever uses is fake.**
+Tags: #os #memory #paging
+
+Module 01 asserted a few things without explaining the mechanism: that two processes' `0x400000` are different physical bytes, that `fork()`'s copy-on-write "just works," and that `.text` can be "shared between processes running the same binary." This module explains *how*, and it all comes down to one idea: **every memory address your program ever uses is fake.**
 
 ## Why virtual memory exists
 
 A running program never touches physical RAM addresses directly. Every address it uses is a **virtual address**, private to that process, translated to a real physical address by the hardware on every single access. Three big payoffs:
 
 1. **Isolation** — a bug that corrupts "address `0x1000`" in one process cannot touch another process's actual memory, because their `0x1000`s are (usually) mapped to entirely different physical locations, or one of them may not be mapped at all.
-2. **A clean, contiguous-looking layout** — the text/rodata/data/bss/heap/stack diagram from module 02 can look tidy and contiguous in virtual address space even though the underlying physical RAM backing it is scattered and fragmented.
+2. **A clean, contiguous-looking layout** — the text/rodata/data/bss/heap/stack diagram from the [Processes](../processes/notes.md) module can look tidy and contiguous in virtual address space even though the underlying physical RAM backing it is scattered and fragmented.
 3. **Overcommit** — a process's virtual address space can be far larger than the physical RAM actually installed, because not all of it needs to be backed by real memory at once (more below).
 
 ## Pages, page tables, and the MMU
@@ -26,7 +28,7 @@ When the MMU can't complete a translation, the CPU raises a **page fault**, and 
 
 - **Minor fault, expected** — the page isn't mapped yet, but the kernel knows exactly what should go there (a fresh zeroed page, a copy for COW — see below, or a page from an already-open file backing an `mmap`). The kernel fixes it up and resumes the instruction, invisible to your program except for a tiny one-time delay. This is **demand paging**: a program doesn't need all its memory physically resident before it can run — pages get faulted in only when actually touched.
 - **Major fault, expected but expensive** — the page's data lives on disk (swapped out, or not yet read in from a file), so the kernel has to do real disk I/O before resuming. Visible as "major page faults" in tools like `/usr/bin/time -v`.
-- **Unfixable — SIGSEGV** — the address has no valid page table entry at all, or the access violates that page's permissions (e.g. writing to a genuinely read-only page). The kernel can't paper over this, so it delivers `SIGSEGV` to the process instead. This is exactly what happened in `labs/01-cpu-architecture/crash.c`: dereferencing address `0` means "translate virtual page 0," which has no valid entry — unfixable, `SIGSEGV`.
+- **Unfixable — SIGSEGV** — the address has no valid page table entry at all, or the access violates that page's permissions (e.g. writing to a genuinely read-only page). The kernel can't paper over this, so it delivers `SIGSEGV` to the process instead. This is exactly what happened in `labs/cpu-architecture/crash.c`: dereferencing address `0` means "translate virtual page 0," which has no valid entry — unfixable, `SIGSEGV`.
 
 ## fork()'s copy-on-write, precisely
 
@@ -36,11 +38,11 @@ The instant either one tries to **write** to such a page: CPU raises a page faul
 
 ## Shared libraries, previewed
 
-The flip side of COW: multiple *unrelated* processes running the same shared library (`libc.so`) can have their page tables point at the *same* physical frames for that library's code, marked read+execute, no copying ever needed since nobody writes to code. That's the real mechanism behind "`.text` is shared between processes running the same binary" from module 02 — and it's set up via `mmap()`, a syscall we'll get to in module 04. It's also a big part of why running many nginx worker processes is cheaper than it sounds — they're not each holding a separate physical copy of the nginx binary or libc.
+The flip side of COW: multiple *unrelated* processes running the same shared library (`libc.so`) can have their page tables point at the *same* physical frames for that library's code, marked read+execute, no copying ever needed since nobody writes to code. That's the real mechanism behind "`.text` is shared between processes running the same binary" from the [Processes](../processes/notes.md) module — and it's set up via `mmap()`, a syscall a future System calls module will get to. It's also a big part of why running many nginx worker processes is cheaper than it sounds — they're not each holding a separate physical copy of the nginx binary or libc.
 
 ## Swap, briefly
 
-Physical RAM can be oversubscribed. If it fills up, the kernel can evict a page that hasn't been used recently out to disk (swap space), freeing the physical frame; touching that page again later triggers a major fault to bring it back. This becomes directly relevant once we get to container memory limits (module 10) — cgroups can cap how much physical memory a group of processes may hold resident, and when that limit is hit, the kernel reclaims pages or (if configured) invokes the OOM killer.
+Physical RAM can be oversubscribed. If it fills up, the kernel can evict a page that hasn't been used recently out to disk (swap space), freeing the physical frame; touching that page again later triggers a major fault to bring it back. This becomes directly relevant once we get to container memory limits (see the `docker-kubernetes` track, which builds on a future Namespaces & cgroups module) — cgroups can cap how much physical memory a group of processes may hold resident, and when that limit is hit, the kernel reclaims pages or (if configured) invokes the OOM killer.
 
 ## Why this matters for your actual goals
 

@@ -12,7 +12,7 @@ Complete `pid_info.c`:
 2. There's a global variable with an initializer and one without already declared — print both of their addresses.
 3. Allocate memory with `malloc()` (heap) and declare a local variable (stack) inside `main`. Print both addresses.
 4. Print the address of `main` itself (text segment) — cast the function pointer to `(void *)`.
-5. Order the five addresses from lowest to highest and check it against the layout diagram in `notes/02-processes/notes.md`.
+5. Order the five addresses from lowest to highest and check it against the layout diagram in `notes/processes/notes.md`.
 
 ## Verify
 
