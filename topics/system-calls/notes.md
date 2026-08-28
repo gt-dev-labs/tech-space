@@ -83,6 +83,42 @@ trusted validation and operation in kernel mode
 restricted user mode again
 ```
 
+## What if user code jumps directly to a kernel address?
+
+Knowing a kernel virtual address does not grant access to it. On every instruction fetch, the CPU's MMU translates the virtual address through the current page tables and checks the page's permission bits against the CPU's current privilege level.
+
+On x86-64, a page-table entry has a **User/Supervisor** permission bit:
+
+- a user page may be accessed while the CPU is running at user privilege;
+- a supervisor page may be accessed only while the CPU is running at kernel privilege.
+
+Kernel code pages are supervisor pages. If a process in user mode puts a kernel address into `rip` using `jmp`, `call`, or `ret`, the next instruction fetch requires user-mode access to a supervisor page. The MMU rejects that fetch and the CPU raises a **page-fault exception** before the kernel instruction executes.
+
+```
+CPL 3: user mode
+    ↓ jmp kernel_address
+MMU translates kernel_address
+    ↓ page is supervisor-only
+permission check fails
+    ↓ #PF page-fault exception
+kernel handles the fault
+    ↓ usually delivers SIGSEGV to the process
+```
+
+With Kernel Page-Table Isolation, most kernel pages may not be present in the user-mode page-table view at all. The result is still a page fault: the translation is missing rather than present-but-supervisor-only.
+
+Suppose the process instead copies the same machine-code bytes into one of its own executable user pages. Those bytes can be fetched, but the CPU remains in user mode. Any instruction defined as privileged—such as changing page-table control registers or disabling interrupts—causes a **general-protection exception**. Any attempt to access supervisor-only kernel memory causes a page fault. Copying or reaching the instructions therefore does not copy the authority required to execute their privileged effects.
+
+The two protections are separate:
+
+| Attempt | Hardware check | Typical CPU exception |
+|---|---|---|
+| Fetch instructions from a kernel page while in user mode | Page-table User/Supervisor and execute permissions | Page fault (`#PF`) |
+| Execute a privileged instruction from an accessible user page | Current privilege level required by that instruction | General protection fault (`#GP`) |
+| Read or write protected kernel data | Page-table User/Supervisor permissions | Page fault (`#PF`) |
+
+The kernel's page-fault or general-protection handler receives control in kernel mode. For an invalid user-space attempt, Linux normally turns the fault into a signal such as `SIGSEGV`, which terminates the process unless it has an applicable signal handler.
+
 ## Does it enter a different address space?
 
 The CPU begins executing kernel code at a different **virtual address**, but on mainstream Linux it does not conceptually need to switch to an entirely separate virtual address space just because a syscall occurred.
