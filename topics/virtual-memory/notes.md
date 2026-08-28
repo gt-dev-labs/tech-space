@@ -28,7 +28,7 @@ When the MMU can't complete a translation, the CPU raises a **page fault**, and 
 
 - **Minor fault, expected** — the page isn't mapped yet, but the kernel knows exactly what should go there (a fresh zeroed page, a copy for COW — see below, or a page from an already-open file backing an `mmap`). The kernel fixes it up and resumes the instruction, invisible to your program except for a tiny one-time delay. This is **demand paging**: a program doesn't need all its memory physically resident before it can run — pages get faulted in only when actually touched.
 - **Major fault, expected but expensive** — the page's data lives on disk (swapped out, or not yet read in from a file), so the kernel has to do real disk I/O before resuming. Visible as "major page faults" in tools like `/usr/bin/time -v`.
-- **Unfixable — SIGSEGV** — the address has no valid page table entry at all, or the access violates that page's permissions (e.g. writing to a genuinely read-only page). The kernel can't paper over this, so it delivers `SIGSEGV` to the process instead. This is exactly what happened in `labs/cpu-architecture/crash.c`: dereferencing address `0` means "translate virtual page 0," which has no valid entry — unfixable, `SIGSEGV`.
+- **Unfixable — SIGSEGV** — the address has no valid page table entry at all, or the access violates that page's permissions (e.g. writing to a genuinely read-only page). The kernel can't paper over this, so it delivers `SIGSEGV` to the process instead. This is exactly what happened in `../cpu-architecture/labs/crash.c`: dereferencing address `0` means "translate virtual page 0," which has no valid entry — unfixable, `SIGSEGV`.
 
 ## fork()'s copy-on-write, precisely
 
@@ -39,6 +39,24 @@ The instant either one tries to **write** to such a page: CPU raises a page faul
 ## Shared libraries, previewed
 
 The flip side of COW: multiple *unrelated* processes running the same shared library (`libc.so`) can have their page tables point at the *same* physical frames for that library's code, marked read+execute, no copying ever needed since nobody writes to code. That's the real mechanism behind "`.text` is shared between processes running the same binary" from the [Processes](../processes/notes.md) module — and it's set up via `mmap()`, a syscall a future System calls module will get to. It's also a big part of why running many nginx worker processes is cheaper than it sounds — they're not each holding a separate physical copy of the nginx binary or libc.
+
+## ASLR — why the same binary loads at a different address each run
+
+Everything above explains *that* addresses are virtual and translated per-process. ASLR (Address Space Layout Randomization) is why they're also **unpredictable**: the kernel picks a fresh random base address for a binary's segments (and its stack, heap, and any shared libraries) on every single `exec()`, even for the exact same file.
+
+This only works because modern binaries are built as **PIE** (Position-Independent Executable) — `readelf -h somebinary` reporting `Type: DYN` rather than `EXEC` means every address baked into the file (in its ELF program headers, in `call`/`jmp` targets) is a relative offset, not an absolute address. The loader picks a random base once at `exec()` time, then every one of those offsets becomes `base + offset` for that run only.
+
+Proved this directly rather than trusting the term: compiled a trivial binary (`sleep(2); return 0;`), ran it three separate times, and grepped its own mapping out of `/proc/<pid>/maps` while it was still alive:
+
+```
+run 1: 55aab68a3000
+run 2: 6236bb883000
+run 3: 5c47323b8000
+```
+
+Same file on disk, three unrelated base addresses. Every offset from the ELF program headers (see the [toolchain](../toolchain/notes.md) module) gets added to whichever of these the kernel happened to choose that run.
+
+Why it matters: it's a security mitigation, not a performance or correctness feature. Exploits that rely on jumping to a hardcoded address (e.g. the address of a `libc` function, for a return-oriented-programming chain) can't just hardcode it anymore — they have to first leak an address from the running process, which ASLR makes much harder to guess blind. It composes with the [PLT/GOT mechanism](../toolchain/qa.md) for shared libraries: `puts`'s real address isn't just "wherever `libc.so` lives" but "wherever `libc.so` got randomly based *this run*," which is exactly why that address can only be resolved at load time, into the GOT, never baked into a file ahead of time.
 
 ## Swap, briefly
 

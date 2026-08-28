@@ -42,4 +42,4 @@ Get these right:
 
 - Parts 1 and 2 run correctly using only manual `gcc` invocations — no `make` involved.
 - Check your Part 3 Makefile actually tracks dependencies correctly: `touch greet.c && make` should only recompile `greet.c` and re-link, not touch `main.o`. `touch greet.h && make` should recompile *both* `.o` files.
-- Once this lab is done, go back and reread `labs/processes/*/Makefile` — they should look like plain, boring, readable files now instead of magic.
+- Once this lab is done, go back and reread `../processes/labs/*/Makefile` — they should look like plain, boring, readable files now instead of magic.

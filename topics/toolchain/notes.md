@@ -40,6 +40,24 @@ This is also why touching one `.c` file only requires recompiling *that* file an
 - **Static linking** copies a library's code directly into your executable.
 - **Dynamic linking** (the default for system libraries like libc) just records that your executable *needs* `libc.so` at runtime; the loader maps it in when the program starts. Run `ldd ./some_binary` to see a dynamically linked executable's shared library dependencies — you'll use this again when looking at how nginx/Node binaries are built.
 
+## From linked file to running process
+
+The four stages above end with a linked executable sitting on disk — but that file is a structured container, not just a stream of CPU instructions. Alongside the actual instruction bytes (`.text`), it holds the data those instructions reference (`.rodata`, `.data`, `.bss`), a **symbol table** and **relocations** (bookkeeping for names the linker/loader still has to resolve — see the PLT/GOT trail in [qa.md](qa.md)), and — the part that matters here — an ELF header plus a table of **program headers**, each one a direct instruction to the kernel's loader: "take these bytes from this file offset, and map them at this virtual address, with these permissions."
+
+`readelf -l` on a linked binary shows exactly that table:
+
+```
+Type: DYN (Position-Independent Executable file)
+
+  LOAD  Offset 0x0000  VirtAddr 0x0000  ...  R    <- .rodata
+  LOAD  Offset 0x1000  VirtAddr 0x1000  ...  R E  <- .text (code)
+  LOAD  Offset 0x2db8  VirtAddr 0x3db8  ...  RW   <- .data/.bss/GOT
+```
+
+This is the *source* of the process memory layout diagrammed in the [Processes](../processes/notes.md) module — that text/rodata/data/bss/heap/stack picture isn't asserted by the OS, it's built by the loader reading rows exactly like these and mapping each one. The `R E` (readable + executable) vs `R`/`RW` permission bits are what the [virtual memory](../virtual-memory/notes.md) module's page-permission enforcement actually protects — a page without the executable bit can be read or written, but the CPU will fault if anything ever tries to jump into it and run it as code.
+
+One more piece only makes sense once you've seen this table: `Type: DYN` means this is a **PIE** (position-independent executable) — every `VirtAddr` here is actually an *offset*, and the kernel picks a random base to add to all of them on every `exec()` (**ASLR** — see the virtual memory module for the proof). That's why the same binary's `main` can disassemble to a different absolute address on every run, even though the file on disk never changes.
+
 ## What `make` is actually doing
 
 Every lab so far handed you a working `Makefile`. Here's what's in one:
@@ -134,4 +152,4 @@ Common directives, decoded:
 
 ## Try it yourself
 
-Do the lab before moving on — running the four stages by hand, then building a small multi-file project by hand without `make`, then writing your own `Makefile` for it. After that, go back and re-read the `Makefile`s in `labs/processes/*` — they should read as plain and boring now.
+Do the lab before moving on — running the four stages by hand, then building a small multi-file project by hand without `make`, then writing your own `Makefile` for it. After that, go back and re-read the `Makefile`s in `../processes/labs/*` — they should read as plain and boring now.

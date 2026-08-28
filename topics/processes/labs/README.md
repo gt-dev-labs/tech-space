@@ -1,6 +1,6 @@
 # Labs — Processes
 
-Companion notes: [`notes/processes/notes.md`](../../notes/processes/notes.md)
+Companion notes: [`notes.md`](../notes.md)
 
 1. [`01-pid-info`](01-pid-info) — inspect PID/PPID and the memory layout (text/data/bss/heap/stack) from inside a running process
 2. [`02-fork-basics`](02-fork-basics) — `fork()` and copy-on-write
