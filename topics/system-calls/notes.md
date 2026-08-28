@@ -92,29 +92,67 @@ On x86-64, a page-table entry has a **User/Supervisor** permission bit:
 - a user page may be accessed while the CPU is running at user privilege;
 - a supervisor page may be accessed only while the CPU is running at kernel privilege.
 
-A simplified x86-64 leaf page-table entry looks like this:
+A page-table entry is one complete 64-bit value. Different ranges of bits inside that value have different meanings:
+
+| Bits | Meaning |
+|---|---|
+| 0 | `P`: present flag |
+| 1 | `R/W`: writable flag |
+| 2 | `U/S`: user-accessible flag |
+| 3–11 | other flags and metadata |
+| 12–51 | physical page-base address bits |
+| 52–62 | other/reserved metadata |
+| 63 | `NX`: no-execute flag |
+
+The physical page-base address is therefore only one field inside the complete entry. For a 4 KiB page, the physical base is aligned to 4 KiB, so its lowest 12 address bits are always zero. The entry reuses those otherwise-zero low positions for flags.
+
+Suppose a page begins at physical address:
 
 ```
-63             51                    12 11       3  2   1   0
-┌───────────────┬──────────────────────┬───────────┬───┬───┬───┐
-│ NX            │ physical frame       │ other     │U/S│R/W│ P │
-└───────────────┴──────────────────────┴───────────┴───┴───┴───┘
+physical page base = 0x0000000012345000
 ```
 
-- `P` (bit 0): page is present.
-- `R/W` (bit 1): writes are allowed when set.
-- `U/S` (bit 2): user-mode access is allowed when set; clear means supervisor-only.
-- `NX` (bit 63): instruction execution is forbidden when set.
+This is not yet the complete entry; it is only the value that will occupy the entry's physical-address field. To map it as present, read-only, executable, and supervisor-only, the flags are:
 
-Suppose the physical page frame begins at `0x0000000012345000`. Ignoring hardware-maintained and caching flags, three example entries are:
+```
+P   = 1 → bit 0 contributes 0x1
+R/W = 0 → bit 1 contributes 0x0
+U/S = 0 → bit 2 contributes 0x0
+NX  = 0 → bit 63 contributes 0x0
+```
 
-| Mapping | Simplified entry | Important bits |
-|---|---:|---|
-| Kernel code: present, read-only, executable, supervisor-only | `0x0000000012345001` | `P=1, R/W=0, U/S=0, NX=0` |
-| User code: present, read-only, executable | `0x0000000012345005` | `P=1, R/W=0, U/S=1, NX=0` |
-| User data: present, writable, non-executable | `0x8000000012345007` | `P=1, R/W=1, U/S=1, NX=1` |
+The kernel constructs the complete entry with bitwise OR:
 
-These examples show that the same physical frame address could theoretically be described with different permissions; the flags are part of the mapping. Real x86-64 translation walks several levels, and effective permissions are combined across them, but the final access decision has this same shape.
+```
+physical-address field:  0x0000000012345000
+flags:                   0x0000000000000001
+                         ────────────────── OR
+complete 64-bit entry:   0x0000000012345001
+```
+
+Decoding that complete entry reverses the operation:
+
+```
+entry & address_mask = 0x0000000012345000  physical page base
+entry & 0x1          = 1                   present
+entry & 0x2          = 0                   not writable
+entry & 0x4          = 0                   supervisor-only
+entry's bit 63       = 0                   executable
+```
+
+For comparison, making the same mapping user-accessible sets bit 2 as well:
+
+```
+physical-address field:  0x0000000012345000
+P flag:                  0x0000000000000001
+U/S flag:                0x0000000000000004
+                         ────────────────── OR
+complete 64-bit entry:   0x0000000012345005
+```
+
+The earlier wording “physical frame = `0x...5000`” was ambiguous: the number shown was the encoded physical-address portion, not a complete entry being broken into flags.
+
+Real x86-64 translation walks several levels, and effective permissions are combined across them, but a leaf entry illustrates the core encoding.
 
 Kernel code pages are supervisor pages. If a process in user mode puts a kernel address into `rip` using `jmp`, `call`, or `ret`, the next instruction fetch requires all of the following: a present translation, permission for user-mode access, and permission to execute. A kernel-code mapping has `U/S=0`, so the MMU rejects the fetch and the CPU raises a **page-fault exception** before the kernel instruction executes.
 
