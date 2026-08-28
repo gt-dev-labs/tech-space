@@ -52,6 +52,37 @@ On x86-64 Linux, the broad sequence is:
 
 So the intuition that the program counter changes is right. On x86-64, the architectural name is the **instruction pointer**, `rip`, rather than “process counter.” More generally, textbooks call it the **program counter** (PC).
 
+## Why kernel mode is necessary
+
+Kernel code must perform operations that ordinary application code is forbidden to perform. Examples include:
+
+- accessing device-control registers and issuing hardware I/O;
+- changing page tables and memory permissions;
+- configuring interrupt handling;
+- scheduling tasks and changing their saved CPU state;
+- accessing kernel memory and other processes' protected resources.
+
+The CPU enforces this distinction. In user mode, privileged instructions are rejected and protected kernel pages cannot be accessed. In kernel mode, the CPU permits those operations.
+
+This is also what makes the kernel a trustworthy gatekeeper. A process cannot open any file merely because it knows the filename or read another process's memory merely because it knows an address. It must ask the kernel, and kernel code checks the caller's identity, permissions, resource limits, and arguments before performing the operation.
+
+If the CPU stayed in user mode, one of two designs would result:
+
+1. **The syscall implementation would remain restricted.** It could not manipulate page tables, devices, interrupt state, or protected kernel data, so it could not actually implement many operating-system services.
+2. **User mode would be given those powers.** Then every application would also have them. A buggy or malicious program could overwrite the kernel, inspect other processes, disable interrupts, corrupt storage, or take over the machine.
+
+The privilege transition is therefore not needed merely because the implementation lives at another address. A normal function call can jump to another address without changing privilege. It is needed because the kernel routine must execute with powers that the caller deliberately does not have.
+
+The safe boundary is:
+
+```
+untrusted request in user mode
+          ↓ syscall
+trusted validation and operation in kernel mode
+          ↓ return
+restricted user mode again
+```
+
 ## Does it enter a different address space?
 
 The CPU begins executing kernel code at a different **virtual address**, but on mainstream Linux it does not conceptually need to switch to an entirely separate virtual address space just because a syscall occurred.
