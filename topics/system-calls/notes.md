@@ -92,7 +92,31 @@ On x86-64, a page-table entry has a **User/Supervisor** permission bit:
 - a user page may be accessed while the CPU is running at user privilege;
 - a supervisor page may be accessed only while the CPU is running at kernel privilege.
 
-Kernel code pages are supervisor pages. If a process in user mode puts a kernel address into `rip` using `jmp`, `call`, or `ret`, the next instruction fetch requires user-mode access to a supervisor page. The MMU rejects that fetch and the CPU raises a **page-fault exception** before the kernel instruction executes.
+A simplified x86-64 leaf page-table entry looks like this:
+
+```
+63             51                    12 11       3  2   1   0
+┌───────────────┬──────────────────────┬───────────┬───┬───┬───┐
+│ NX            │ physical frame       │ other     │U/S│R/W│ P │
+└───────────────┴──────────────────────┴───────────┴───┴───┴───┘
+```
+
+- `P` (bit 0): page is present.
+- `R/W` (bit 1): writes are allowed when set.
+- `U/S` (bit 2): user-mode access is allowed when set; clear means supervisor-only.
+- `NX` (bit 63): instruction execution is forbidden when set.
+
+Suppose the physical page frame begins at `0x0000000012345000`. Ignoring hardware-maintained and caching flags, three example entries are:
+
+| Mapping | Simplified entry | Important bits |
+|---|---:|---|
+| Kernel code: present, read-only, executable, supervisor-only | `0x0000000012345001` | `P=1, R/W=0, U/S=0, NX=0` |
+| User code: present, read-only, executable | `0x0000000012345005` | `P=1, R/W=0, U/S=1, NX=0` |
+| User data: present, writable, non-executable | `0x8000000012345007` | `P=1, R/W=1, U/S=1, NX=1` |
+
+These examples show that the same physical frame address could theoretically be described with different permissions; the flags are part of the mapping. Real x86-64 translation walks several levels, and effective permissions are combined across them, but the final access decision has this same shape.
+
+Kernel code pages are supervisor pages. If a process in user mode puts a kernel address into `rip` using `jmp`, `call`, or `ret`, the next instruction fetch requires all of the following: a present translation, permission for user-mode access, and permission to execute. A kernel-code mapping has `U/S=0`, so the MMU rejects the fetch and the CPU raises a **page-fault exception** before the kernel instruction executes.
 
 ```
 CPL 3: user mode
