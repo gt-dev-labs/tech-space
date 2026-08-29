@@ -28,12 +28,15 @@ If you're an agent working in this repo — any agent, not a specific one — he
 
 - `profile/gaps.md` — knowledge gaps that show up, each with a concrete recommendation (build a specific topic, revisit once a specific track has content, etc.). Move an entry to "Resolved" once it's genuinely closed, rather than deleting it.
 - `profile/strengths.md` — things the user is already strong at, so future explanations can calibrate to that rather than over-explaining or restarting from zero every time.
-- `profile/english.md` — despite the name, this tracks `config.json`'s `working_language`, for a user whose `native_language` is whatever `config.json` says. Four kinds of entries:
-  - a mistake that recurs more than once (not a one-off typo)
-  - genuinely useful/idiomatic phrasing worth surfacing — common among native speakers, easy to underuse as a non-native
-  - vocabulary diversification — a word or pattern the user reaches for often, with alternatives, so their range broadens over time
+- `profile/english.md` — despite the name, this tracks `config.json`'s `working_language`, for a user whose `native_language` is whatever `config.json` says. Record all of the following:
+  - **Any significant mistake immediately, even on its first occurrence.** A mistake is significant when it materially changes or obscures the intended meaning, uses the wrong grammatical structure in a way worth learning from, or would be notably problematic in normal professional or native conversation. Do not wait for it to recur.
+  - A minor mistake once it recurs enough to show a real pattern. Do not promote obvious one-off typos or rushed spelling slips into learning issues.
+  - Genuinely useful/idiomatic phrasing worth surfacing — common among native speakers, easy to underuse as a non-native.
+  - Vocabulary diversification — a word or pattern the user reaches for often, with alternatives, so their range broadens over time.
   - For any entry where translating into the native language actually clarifies the meaning (an idiom, a nuance a dictionary definition would miss), include the translation plus an example sentence in each language. Don't force a translation where it doesn't add anything (e.g. a pure grammar/form slip).
   - **Vocabulary diversification specifically stays out of the live conversation by default** — record it in the profile, don't lecture about it mid-discussion. Only mention it live if it's actually important enough to interrupt for (rare) — the profile file is where this is meant to accumulate and be reviewed, not the chat.
+
+**Do not let the English profile become only a collection of “juicy” phrases. Significant errors are higher-priority learning data and must be recorded when they appear.**
 - Update these quietly, the way you'd update a note — no need to announce every small addition, though it's worth mentioning when something notable gets added. Be honest about confidence: don't record a "recurring" pattern from a single occurrence, and don't invent gaps/strengths that aren't actually supported by the conversation.
 
 ## The model: a flat topic pool, plus track plans on top
