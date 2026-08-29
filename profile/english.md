@@ -1,8 +1,15 @@
 # English Notes
 
-Tracks the working language set in `config.json` (English), for a native speaker of whatever `config.json`'s native language is (Russian). Four kinds of entries: recurring mistakes worth being conscious of, useful/idiomatic language easy to underuse as a non-native, and vocabulary worth diversifying. Translated into the native language plus an example, wherever translation actually clarifies the meaning (an idiom, a nuance) — skipped where it wouldn't add anything (a pure grammar/form slip). This is a seed, not a finished analysis — it'll get sharper as more of this actually shows up in conversation. Built alongside the standing "correct every prompt" habit.
+Tracks the working language set in `config.json` (English), for a native speaker of whatever `config.json`'s native language is (Russian). It records significant mistakes, recurring minor patterns, useful/idiomatic language that is easy to underuse as a non-native speaker, and vocabulary worth diversifying. Translate an entry into the native language and include examples in both languages wherever that genuinely clarifies the meaning; skip translation where it adds nothing, such as a pure form or spelling issue. This is a seed, not a finished analysis—it should get sharper as more evidence appears in conversation. Built alongside the standing “correct every prompt” habit.
 
-**Vocabulary diversification stays out of the live conversation by default** — it accumulates here for review, rather than getting raised mid-discussion every time it comes up. Only worth mentioning live if it's actually important enough to interrupt for, which should be rare.
+## Recording threshold
+
+- **Record any significant mistake immediately, even if it appears only once.** Significant means that it changes or obscures the intended meaning, exposes a grammatical misunderstanding worth correcting, or would be notably problematic in ordinary professional or native conversation.
+- Record a minor error after it recurs enough to demonstrate a real pattern.
+- Do not treat obvious one-off typos, transcription artifacts, or rushed spelling slips as learning gaps unless they recur.
+- Do not let this file become only a collection of useful or “juicy” phrases: significant errors are higher-priority learning data.
+
+**Vocabulary diversification stays out of the live conversation by default**—it accumulates here for review rather than being raised mid-discussion every time it comes up. Mention it live only when it is genuinely important enough to interrupt the technical conversation, which should be rare.
 
 ## Recurring patterns to watch
 
