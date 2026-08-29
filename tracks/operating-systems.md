@@ -8,14 +8,15 @@ Understanding how Linux actually works, from userspace up. This is a curated pla
 2. [Processes](../topics/processes/notes.md) — labs: [`topics/processes/labs`](../topics/processes/labs)
 3. [Virtual memory & paging](../topics/virtual-memory/notes.md) — labs: [`topics/virtual-memory/labs`](../topics/virtual-memory/labs)
 4. [System calls](../topics/system-calls/notes.md) — the user/kernel boundary, syscall entry, privilege transitions, and what is actually part of an executable
-5. Threads — *not built yet*
-6. IPC — *not built yet*
-7. I/O multiplexing (select/poll/epoll) — *not built yet*
-8. Networking & sockets — *not built yet*
-9. Namespaces & cgroups — *not built yet*
-10. OS networking deep dive — *not built yet*
+5. [File descriptors](../topics/file-descriptors/notes.md) — process-local integer handles, descriptor tables, open-file objects, and shared open-file state
+6. Threads — *not built yet*
+7. IPC — *not built yet*
+8. I/O multiplexing (select/poll/epoll) — *not built yet*
+9. Networking & sockets — *not built yet*
+10. Namespaces & cgroups — *not built yet*
+11. OS networking deep dive — *not built yet*
 
-Steps 1 and 3 were inserted after starting on processes, prompted by questions that came up while reading assembly output — CPU architecture (registers, calling conventions) directly supports reading assembly, and virtual memory/paging deepens the process address-space material and explains fork's copy-on-write for real. The system-calls topic then connects those CPU and memory mechanisms to the actual user/kernel transition.
+Steps 1 and 3 were inserted after starting on processes, prompted by questions that came up while reading assembly output — CPU architecture (registers, calling conventions) directly supports reading assembly, and virtual memory/paging deepens the process address-space material and explains fork's copy-on-write for real. The system-calls topic then connects those CPU and memory mechanisms to the actual user/kernel transition. File descriptors follow naturally because they are one of the main process-visible handles passed through syscalls and are foundational for pipes, multiplexed I/O, and sockets.
 
 ### Bonus branch — build it yourself (theory only)
 
